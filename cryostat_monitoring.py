@@ -15,6 +15,7 @@ The default temperature thresholds can be changed in the config.ini file.
 import time
 import configparser
 from textwrap import dedent
+import traceback
 import mqtt_interface as mqtt
 import discord_access as discord
 import logs
@@ -375,7 +376,10 @@ class UI():
             else:
                 print(f'User input {cmd} is invalid.')
                 print('')
-        except:
+        except KeyboardInterrupt:
+            print('User interrupted the program.')
+        except Exception:
+            traceback.print_exc()
             print(f'User input {cmd} is invalid.')
             print('')
             
