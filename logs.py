@@ -18,7 +18,7 @@ from datetime import datetime
 from datetime import timedelta
 
 def setup_logging():
-    logfile = 'logfiles/status/%4.f_' %datetime.now().year + '%02.f_status.log' %datetime.now().month
+    logfile = 'logfiles/status/%4.f_status.log' %datetime.now().year
     logging.root.handlers = []
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s: %(message)s',
@@ -61,7 +61,7 @@ class ReadLogfiles:
         self.flow = [0]
         
         # define filepath for logging pressure, temperature and flow readings
-        self.outfile = 'logfiles/readings/' + datetime.today().strftime('%Y_%m') + '_readings.csv'
+        self.outfile = 'logfiles/readings/' + datetime.today().strftime('%Y') + '_readings.csv'
         if not os.path.isfile(self.outfile):
             date_time = ['Date','Time','Status']
             pressures = ['p1','p2','p3','p4','p5','p6','p4-p3']

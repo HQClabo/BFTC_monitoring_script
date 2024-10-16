@@ -38,6 +38,8 @@ class UI():
                               'Still': 5,
                               'MXC': 6
             }
+        if config_defaults['channel_nr_still']: self.temp_channels['Still']=int(config_defaults['channel_nr_still'])
+        if config_defaults['channel_nr_mxc']: self.temp_channels['MXC']=int(config_defaults['channel_nr_mxc'])
         if config_defaults['channel_nr_magnet']: self.temp_channels['Magnet']=int(config_defaults['channel_nr_magnet'])
         if config_defaults['channel_nr_fse']: self.temp_channels['FSE']=int(config_defaults['channel_nr_fse'])
         
