@@ -38,18 +38,17 @@ class Client_bftc(mqtt.Client):
     # when the given temperature threshold is reached on the desired channel.
     def on_msg(self,client, userdata, msg):
         data = json.loads(msg.payload)
-        self.time_threshold_reached = False
         if (data['channel_nr'] == self.temp_channel) & bool(data['temperature']):
             # ^ is the xor operator
             if self.cooling_bool ^ (data['temperature'] > self.temp_threshold):
                 # Set boolean to True to recognize unwanted disconnections
                 self.threshold_reached = True
                 self.disconnect()
-            # Check if the time threshold is reached. Does nothing if time_threshold is 0.
-            elif self.time_threshold:
-                if abs(time.time() - self.monitor_start_time) > self.time_threshold:
-                    self.time_threshold_reached = True
-                    self.disconnect()
+        # Check if the time threshold is reached. Does nothing if time_threshold is 0.
+        if self.time_threshold:
+            if abs(time.time() - self.monitor_start_time) > self.time_threshold:
+                self.time_threshold_reached = True
+                self.disconnect()
     
     # First reconnects to the client, passes function arguments as object attributes
     # (otherwise, we cannot send them the the on_msg function) and then subscribes
@@ -64,6 +63,7 @@ class Client_bftc(mqtt.Client):
         self.threshold_reached = False
         self.monitor_start_time = time.time()
         self.time_threshold = time_threshold
+        self.time_threshold_reached = False
         self.subscribe(self.temp_topic,0)
         self.loop_forever()
     

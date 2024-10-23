@@ -63,8 +63,8 @@ class UI():
     
     # Subscribes to temp sensors and checks them until the temp of temp_channel
     # is below (or above for cooling=False) the threshold.
-    def monitor_temp(self,temp_channel, threshold, cooling=True):
-        self.bftc.monitor_temp(temp_channel,threshold,cooling)
+    def monitor_temp(self,temp_channel, threshold, cooling=True, time_threshold=0):
+        self.bftc.monitor_temp(temp_channel,threshold,cooling,time_threshold)
         
     # Monitors still temperature and returns a message with the time it took
     # to reach the threshold.
@@ -108,11 +108,11 @@ class UI():
         self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
         # check if threshold was reached, otherwise repeat monitoring
         # if the time threshold was reached, take a snapshot of the readings and continue monitoring
-        if not self.bftc.threshold_reached:
+        while not self.bftc.threshold_reached:
             if self.bftc.time_threshold_reached:
                 self.log.write_values('Base Temperature')
-                self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
-            self.check_disconnect()
+            else:
+                self.check_disconnect()
             self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
             return 1
         msg = f'MXC surpassed {threshold*1000} mK '
