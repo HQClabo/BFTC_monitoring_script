@@ -13,6 +13,7 @@ The default temperature thresholds can be changed in the config.ini file.
 
 
 import time
+from datetime import datetime
 import configparser
 from textwrap import dedent
 import traceback
@@ -111,10 +112,10 @@ class UI():
         while not self.bftc.threshold_reached:
             if self.bftc.time_threshold_reached:
                 self.log.write_values('Base Temperature')
+                print(datetime.today().strftime('%d-%m-%y'),datetime.today().strftime('%H:%M:%S'))
             else:
                 self.check_disconnect()
             self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
-            return 1
         msg = f'MXC surpassed {threshold*1000} mK '
         self.discord_server.send_warning(msg)
         self.log.write_values('Unexpected Warmup')
