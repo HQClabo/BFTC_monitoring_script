@@ -11,6 +11,7 @@ The monitor_temp function runs in a loop until the specified temperature thresho
 is reached. The IP address of the API is defined in the config.ini file.
 """
 
+import time
 import json
 import configparser
 import paho.mqtt.client as mqtt
@@ -37,24 +38,32 @@ class Client_bftc(mqtt.Client):
     # when the given temperature threshold is reached on the desired channel.
     def on_msg(self,client, userdata, msg):
         data = json.loads(msg.payload)
+        self.time_threshold_reached = False
         if (data['channel_nr'] == self.temp_channel) & bool(data['temperature']):
             # ^ is the xor operator
             if self.cooling_bool ^ (data['temperature'] > self.temp_threshold):
                 # Set boolean to True to recognize unwanted disconnections
                 self.threshold_reached = True
                 self.disconnect()
-
+            # Check if the time threshold is reached. Does nothing if time_threshold is 0.
+            elif self.time_threshold:
+                if abs(time.time() - self.monitor_start_time) > self.time_threshold:
+                    self.time_threshold_reached = True
+                    self.disconnect()
+    
     # First reconnects to the client, passes function arguments as object attributes
     # (otherwise, we cannot send them the the on_msg function) and then subscribes
     # to the temperature sensors and loops until the client is disconnected 
     # (which happens when the temperature theshold is reached).
-    def monitor_temp(self,channel,threshold,cooling):
+    def monitor_temp(self,channel,threshold,cooling,time_threshold=0):
         self.reconnect()
         self.on_message = self.on_msg
         self.temp_channel = channel
         self.temp_threshold = threshold
         self.cooling_bool = cooling
         self.threshold_reached = False
+        self.monitor_start_time = time.time()
+        self.time_threshold = time_threshold
         self.subscribe(self.temp_topic,0)
         self.loop_forever()
     

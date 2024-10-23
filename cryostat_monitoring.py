@@ -44,6 +44,11 @@ class UI():
         if config_defaults['channel_nr_magnet']: self.temp_channels['Magnet']=int(config_defaults['channel_nr_magnet'])
         if config_defaults['channel_nr_fse']: self.temp_channels['FSE']=int(config_defaults['channel_nr_fse'])
         
+        if config_defaults['snapshot_time_hrs']:
+            self.snapshot_time_hrs = float(config_defaults['snapshot_time_hrs'])
+        else:
+            self.snapshot_time_hrs = 0
+        
         config_program_modes = config['PROGRAM_MODES']['available_modes'].split('\n')
         self.user_available_programs = [mode for mode in config_program_modes if mode != '']
         
@@ -96,11 +101,19 @@ class UI():
     def circulation_mode(self,threshold):
         # Monitors mxc temperature and returns a warning when it goes above threshold.
         print('Entered circulation mode')
-        self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False)
+        if self.snapshot_time_hrs:
+            print(f'A snapshot of the readings will be taken every {self.snapshot_time_hrs} hours')
+        print('Press Ctrl+C to exit the program')
+        time_threshold = 3600*self.snapshot_time_hrs
+        self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
         # check if threshold was reached, otherwise repeat monitoring
+        # if the time threshold was reached, take a snapshot of the readings and continue monitoring
         if not self.bftc.threshold_reached:
+            if self.bftc.time_threshold_reached:
+                self.log.write_values('Base Temperature')
+                self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
             self.check_disconnect()
-            self.circulation_mode(threshold)
+            self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
             return 1
         msg = f'MXC surpassed {threshold*1000} mK '
         self.discord_server.send_warning(msg)
