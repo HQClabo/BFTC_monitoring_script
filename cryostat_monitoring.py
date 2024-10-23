@@ -113,8 +113,7 @@ class UI():
         while not self.bftc.threshold_reached:
             if self.bftc.time_threshold_reached:
                 self.log.write_values('Base Temperature')
-                msg = datetime.today().strftime('%d-%m-%y')
-                msg += datetime.today().strftime('%H:%M:%S')
+                msg = datetime.today().strftime('%Y/%m/%d %H:%M:%S')
                 msg += ' - Snapshot of the readings was taken'
                 print(msg)
             else:
