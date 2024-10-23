@@ -112,7 +112,10 @@ class UI():
         while not self.bftc.threshold_reached:
             if self.bftc.time_threshold_reached:
                 self.log.write_values('Base Temperature')
-                print(datetime.today().strftime('%d-%m-%y'),datetime.today().strftime('%H:%M:%S'))
+                print('')
+                msg = datetime.today().strftime('%d-%m-%y'),datetime.today().strftime('%H:%M:%S')
+                msg += ' - Snapshot of the readings was taken'
+                print(msg)
             else:
                 self.check_disconnect()
             self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
