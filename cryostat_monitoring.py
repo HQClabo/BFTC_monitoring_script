@@ -105,6 +105,7 @@ class UI():
         if self.snapshot_time_hrs:
             print(f'A snapshot of the readings will be taken every {self.snapshot_time_hrs} hours')
         print('Press Ctrl+C to exit the program')
+        print('')
         time_threshold = 3600*self.snapshot_time_hrs
         self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, time_threshold=time_threshold)
         # check if threshold was reached, otherwise repeat monitoring
@@ -112,8 +113,8 @@ class UI():
         while not self.bftc.threshold_reached:
             if self.bftc.time_threshold_reached:
                 self.log.write_values('Base Temperature')
-                print('')
-                msg = datetime.today().strftime('%d-%m-%y'),datetime.today().strftime('%H:%M:%S')
+                msg = datetime.today().strftime('%d-%m-%y')
+                msg += datetime.today().strftime('%H:%M:%S')
                 msg += ' - Snapshot of the readings was taken'
                 print(msg)
             else:
