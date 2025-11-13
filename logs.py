@@ -73,20 +73,29 @@ class ReadLogfiles:
 
     # read and return the last line of a file
     def read_last_line(self,file):
+        return self.read_last_n_lines(file,n=1)[0]
+    
+    # read and return the last line of a file
+    def read_last_n_lines(self,file,n):
         with open(file) as f:
-            for line in f:
-                pass
-            last_line = line.rstrip('\n')
-        return last_line
+            lines = f.readlines()
+        lines_no_linebreak = [line.strip('\n') for line in lines]
+        return lines_no_linebreak[-n:]
 
     # read pressure values from pressure logfile
     # looks for presence of 'CHx' in line string and then read the value next to it
+    # average values over last n_avg lines to reduce noise
     def read_pressures(self):
-        line_string = self.read_last_line(self.pressures_file)
-        line_list = line_string.split(',')
+        n_avg = 10
+        line_string = self.read_last_n_lines(self.pressures_file,n=n_avg)
+        self.pressures = [0,0,0,0,0,0]
+        for line in line_string:
+            line_list = line.split(',')
+            for i in range(6):
+                index = line_list.index(f'CH{i+1}')
+                self.pressures[i] += float(line_list[index+3])
         for i in range(6):
-            index = line_list.index(f'CH{i+1}')
-            self.pressures[i] =line_list[index+3]
+            self.pressures[i] /= n_avg
     
     # read temperature values from temperature logfiles
     # loop through log files and get last temperature readings
