@@ -27,7 +27,7 @@ class UI():
         config = configparser.ConfigParser()
         config.read('config.ini')
         config_defaults = config['DEFAULTS']
-        self.def_PT_start = float(config_defaults['PT_start'])
+        self.PT_start = float(config_defaults['PT_start'])
         self.def_still_val = float(config_defaults['still_full_cd'])
         self.def_still_val_4K_cd = float(config_defaults['still_4K_cd'])
         self.def_still_val_coldinsert = float(config_defaults['still_coldinsert'])
