@@ -27,6 +27,7 @@ class UI():
         config = configparser.ConfigParser()
         config.read('config.ini')
         config_defaults = config['DEFAULTS']
+        self.def_PT_start = float(config_defaults['PT_start'])
         self.def_still_val = float(config_defaults['still_full_cd'])
         self.def_still_val_4K_cd = float(config_defaults['still_4K_cd'])
         self.def_still_val_coldinsert = float(config_defaults['still_coldinsert'])
@@ -66,6 +67,22 @@ class UI():
     # is below (or above for cooling=False) the threshold.
     def monitor_temp(self,temp_channel, threshold, cooling=True, time_threshold=0):
         self.bftc.monitor_temp(temp_channel,threshold,cooling,time_threshold)
+
+    # Monitors 50K temperature and returns a message with the time it took
+    # to reach the threshold.
+    def _50K_temp(self,time_start, threshold, cooling=True):
+        self.monitor_temp(self.temp_channels['50K'],threshold, cooling)
+        time_passed = time.time() - time_start
+        hours = time_passed//3600
+        minutes = (time_passed-hours*3600)//60
+        # check if threshold was reached, otherwise repeat monitoring
+        if not self.bftc.threshold_reached:
+            self.check_disconnect(time_passed)
+            self._50K_temp(time_start,threshold,cooling)
+            return time_passed
+        msg = f'50K plate reached {threshold} K after %.0f h ' %(hours) + '%.0f min' %(minutes)
+        self.discord_server.send_message(msg)
+        return time_passed
         
     # Monitors still temperature and returns a message with the time it took
     # to reach the threshold.
@@ -78,10 +95,10 @@ class UI():
         if not self.bftc.threshold_reached:
             self.check_disconnect(time_passed)
             self.still_temp(time_start,threshold,cooling)
-            return 1
+            return time_passed
         msg = f'Still reached {threshold} K after %.0f h ' %(hours) + '%.0f min' %(minutes)
         self.discord_server.send_message(msg)
-        return 1
+        return time_passed
     
     # Monitors mxc temperature and returns a message with the time it took
     # to reach the threshold.
@@ -94,10 +111,10 @@ class UI():
         if not self.bftc.threshold_reached:
             self.check_disconnect(time_passed)
             self.mxc_temp(time_start,threshold,cooling)
-            return 1
+            return time_passed
         msg = f'MXC reached {threshold*1000} mK after %.0f h ' %(hours) + '%.0f min' %(minutes)
         self.discord_server.send_message(msg)
-        return 1
+        return time_passed
     
     def circulation_mode(self,threshold):
         # Monitors mxc temperature and returns a warning when it goes above threshold.
@@ -132,8 +149,15 @@ class UI():
         # if msg_ext:
         #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
+        pt_start_time = self._50K_temp(self.start,self.PT_start)
         self.still_temp(self.start,still_val)
-        self.mxc_temp(self.start,baseT_val)
+        # estimate the cooldown time after pumping
+        baseT_time = self.mxc_temp(self.start,baseT_val)
+        time_passed = pt_start_time - baseT_time
+        hours = time_passed//3600
+        minutes = (time_passed-hours*3600)//60
+        msg = f'Cooldown time without pumping: %.0f h ' %(hours) + '%.0f min' %(minutes)
+        self.discord_server.send_message(msg)
         time.sleep(3600*2)
         self.log.write_values('Base Temperature')
         self.circulation_mode(circ_val)
@@ -145,6 +169,7 @@ class UI():
         # if msg_ext:
         #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
+        self._50K_temp(self.start,self.PT_start)
         self.still_temp(self.start,still_val)    
     
     # starts condensing and reports when reaching base temperature
