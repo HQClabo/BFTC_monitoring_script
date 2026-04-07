@@ -153,9 +153,9 @@ class UI():
         self.still_temp(self.start,still_val)
         # estimate the cooldown time after pumping
         baseT_time = self.mxc_temp(self.start,baseT_val)
-        time_passed = pt_start_time - baseT_time
-        hours = time_passed//3600
-        minutes = (time_passed-hours*3600)//60
+        time_after_pumping = baseT_time - pt_start_time
+        hours = time_after_pumping//3600
+        minutes = (time_after_pumping-hours*3600)//60
         msg = f'Cooldown time without pumping: %.0f h ' %(hours) + '%.0f min' %(minutes)
         self.discord_server.send_message(msg)
         time.sleep(3600*2)
