@@ -62,19 +62,24 @@ class UI():
         self.log = logs.ReadLogfiles(self.temp_channels)
         
     # Function definitions for different cooldown and warmup scenarios
+
+    def convert_sec_to_h_min(self,time_sec):
+        # converts time in seconds to hours and minutes for better readability of the messages.
+        hours = time_sec//3600
+        minutes = (time_sec-hours*3600)//60
+        return hours, minutes
     
-    # Subscribes to temp sensors and checks them until the temp of temp_channel
-    # is below (or above for cooling=False) the threshold.
     def monitor_temp(self,temp_channel, threshold, cooling=True, time_threshold=0):
+        # Subscribes to temp sensors and checks them until the temp of temp_channel
+        # is below (or above for cooling=False) the threshold.
         self.bftc.monitor_temp(temp_channel,threshold,cooling,time_threshold)
 
-    # Monitors 50K temperature and returns a message with the time it took
-    # to reach the threshold.
     def _50K_temp(self,time_start, threshold, cooling=True):
+        # Monitors 50K temperature and returns a message with the time it took
+        # to reach the threshold.
         self.monitor_temp(self.temp_channels['50K'],threshold, cooling)
         time_passed = time.time() - time_start
-        hours = time_passed//3600
-        minutes = (time_passed-hours*3600)//60
+        hours, minutes = self.convert_sec_to_h_min(time_passed)
         # check if threshold was reached, otherwise repeat monitoring
         if not self.bftc.threshold_reached:
             self.check_disconnect(time_passed)
@@ -84,13 +89,12 @@ class UI():
         self.discord_server.send_message(msg)
         return time_passed
         
-    # Monitors still temperature and returns a message with the time it took
-    # to reach the threshold.
     def still_temp(self,time_start, threshold=5, cooling=True):
+        # Monitors still temperature and returns a message with the time it took
+        # to reach the threshold.
         self.monitor_temp(self.temp_channels['Still'],threshold, cooling)
         time_passed = time.time() - time_start
-        hours = time_passed//3600
-        minutes = (time_passed-hours*3600)//60
+        hours, minutes = self.convert_sec_to_h_min(time_passed)
         # check if threshold was reached, otherwise repeat monitoring
         if not self.bftc.threshold_reached:
             self.check_disconnect(time_passed)
@@ -100,13 +104,12 @@ class UI():
         self.discord_server.send_message(msg)
         return time_passed
     
-    # Monitors mxc temperature and returns a message with the time it took
-    # to reach the threshold.
     def mxc_temp(self,time_start, threshold, cooling=True):
+        # Monitors mxc temperature and returns a message with the time it took
+        # to reach the threshold.
         self.monitor_temp(self.temp_channels['MXC'],threshold,cooling)
         time_passed = time.time() - time_start
-        hours = time_passed//3600
-        minutes = (time_passed-hours*3600)//60
+        hours, minutes = self.convert_sec_to_h_min(time_passed)
         # check if threshold was reached, otherwise repeat monitoring
         if not self.bftc.threshold_reached:
             self.check_disconnect(time_passed)
@@ -141,56 +144,51 @@ class UI():
         self.log.write_values('Unexpected Warmup')
         return 1
     
-    # Starts full cooldown and reports when still is cold enough for ciculation
-    # and when reaching base temperature and then enters circulation mode.
     def full_cooldown(self,still_val,baseT_val,circ_val,msg):
+        # Starts full cooldown and reports when still is cold enough for ciculation
+        # and when reaching base temperature and then enters circulation mode.
         self.log.write_values('Before Cooldown')
-        # msg = 'Started full cooldown'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
         pt_start_time = self._50K_temp(self.start,self.PT_start)
-        self.still_temp(self.start,still_val)
-        # estimate the cooldown time after pumping
+
+        # waiting for still temperature
+        still_time = self.still_temp(self.start,still_val)
+        hours, minutes = self.convert_sec_to_h_min(still_time - pt_start_time)
+        msg = f'Time without pumping: %.0f h ' %(hours) + '%.0f min' %(minutes)
+        self.discord_server.send_message(msg)
+
+        # waiting for MXC temperature
         baseT_time = self.mxc_temp(self.start,baseT_val)
-        time_after_pumping = baseT_time - pt_start_time
-        hours = time_after_pumping//3600
-        minutes = (time_after_pumping-hours*3600)//60
-        msg = f'Cooldown time without pumping: %.0f h ' %(hours) + '%.0f min' %(minutes)
+        hours, minutes = self.convert_sec_to_h_min(baseT_time - pt_start_time)
+        msg = f'Total cooldown time without pumping: %.0f h ' %(hours) + '%.0f min' %(minutes)
         self.discord_server.send_message(msg)
         time.sleep(3600*2)
         self.log.write_values('Base Temperature')
         self.circulation_mode(circ_val)
 
-    # Starts cooldown to 4K and reports when still is cold enough.
     def cooldown_4K(self,still_val,msg):
+        # Starts cooldown to 4K and reports when still is cold enough.
         self.log.write_values('Before Cooldown')
-        # msg = 'Started cooldown to 4K'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
-        self._50K_temp(self.start,self.PT_start)
-        self.still_temp(self.start,still_val)    
+        pt_start_time = self._50K_temp(self.start,self.PT_start)
+        still_time = self.still_temp(self.start,still_val)
+        hours, minutes = self.convert_sec_to_h_min(still_time - pt_start_time)
+        msg = f'Time without pumping: %.0f h ' %(hours) + '%.0f min' %(minutes)
+        self.discord_server.send_message(msg) 
     
-    # starts condensing and reports when reaching base temperature
-    # and then enters circulation mode
     def condense(self,baseT_val,circ_val,msg):
-        # msg = 'Started mixture condensation'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
+        # starts condensing and reports when reaching base temperature
+        # and then enters circulation mode
         self.discord_server.send_message(msg)
         if self.mxc_temp(self.start,baseT_val):
             time.sleep(3600*2)
             self.log.write_values('Base Temperature')
             self.circulation_mode(circ_val)
     
-    # Starts cold insert and reports when still is cold enough for ciculation
-    # and when reaching base temperature and then enters circulation mode.
     def cold_insert(self,still_val,baseT_val,circ_val,msg):
+        # Starts cold insert and reports when still is cold enough for ciculation
+        # and when reaching base temperature and then enters circulation mode.
         self.log.write_values('Save Circulation')
-        # msg = 'Started cold insert'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
         time.sleep(3600*3)
         self.still_temp(self.start,still_val)
@@ -199,37 +197,28 @@ class UI():
             self.log.write_values('Base Temperature')
             self.circulation_mode(circ_val)
     
-    # Starts cold insert and reports when still is cold enough for ciculation
-    # and when reaching base temperature and then enters circulation mode.
     def cold_insert_4K(self,still_val,msg):
+        # Starts cold insert and reports when still is cold enough for ciculation
+        # and when reaching base temperature and then enters circulation mode.
         self.log.write_values('Save Circulation')
-        # msg = 'Started cold insert to 4K'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
         time.sleep(3600*3)
         self.still_temp(self.start,still_val)
     
-    # Starts warm-up and reports when still is warm enough.
     def warmup(self,still_val,msg):
+        # Starts warm-up and reports when still is warm enough.
         self.log.write_values('Before Warmup')
-        # msg = 'Started warmup'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
         self.still_temp(self.start, still_val, cooling=False)
         self.log.write_values('Room Temperature')
     
-    # Starts FSE warm-up.
     def fse_warmup(self,msg):
+        # Starts FSE warm-up.
         self.log.write_values('Before FSE Warmup')
-        # msg = 'FSE warmup started'
-        # if msg_ext:
-        #     msg+=' - Comment: ' + msg_ext
         self.discord_server.send_message(msg)
 
-    # Returns a message, that the API was disconnected unexpectedly
     def check_disconnect(self,time=None):
+        # Returns a message, that the API was disconnected unexpectedly
         if time:
             msg_time = 'after %.2f h '
         else:
@@ -239,8 +228,8 @@ class UI():
 
     #%% User interface setup
 
-    # Converts the ui input to a float if possible, otherwise return None.
     def get_cmd_value(self,msg):
+        # Converts the ui input to a float if possible, otherwise return None.
         cmd = input(msg)
         if cmd:
             cmd_val = float(cmd)
@@ -382,10 +371,10 @@ class UI():
     
     #%% User interface
     
-    # Runs the program interface that asks the user to select the program mode
-    # and the desired temperature thresholds. The timer is started once the
-    # program has been selected.
     def program_interface(self):
+        # Runs the program interface that asks the user to select the program mode
+        # and the desired temperature thresholds. The timer is started once the
+        # program has been selected.
         
         existing_programs = {
             'Circulation Mode': self.ui_circulation_mode,
