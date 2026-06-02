@@ -2,7 +2,7 @@
 """
 Created on Sat Jan 14 20:39:56 2023
 
-@author: Fabian Oppliger, fabian.oppliger@epfl.ch
+@author: Fabian Oppliger, fabianoppliger@bluewin.ch
 
 
 This file defines a class that allows to send messages on a specific Discord
@@ -17,7 +17,7 @@ import requests
 class Discord_access():
     def __init__(self):
         # Read config file to setup connection Discord server with the desired user
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(inline_comment_prefixes="#")
         config.read('config.ini')
         config_discord = config['DISCORD']
         
@@ -26,14 +26,18 @@ class Discord_access():
         self.access_token = config_discord['access_token']
         self.header = {'authorization': self.access_token}
         
-    # Write message in log file and on discord server
     def send_message(self,msg):
+        """
+        Write message in log file and on discord server
+        """
         logs.info(msg)
         payload = {'content': msg}
         requests.post(self.discord_channel, data=payload, headers=self.header)
     
-    # Write warning in log file and on discord server
     def send_warning(self,msg):
+        """
+        Write warning in log file and on discord server
+        """
         logs.warning(msg)
         payload = {'content': 'Warning: '+msg}
         requests.post(self.discord_channel, data=payload, headers=self.header)

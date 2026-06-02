@@ -7,9 +7,12 @@ warm up time etc.), the other contains snapshots of the sensor readings at impor
 
 
 ## Installation
-Install the necessary packages by running:
+Clone this github repository to the cryostat control computer.
+Run python and install the required packages by running:
 
+```
 pip install -r requirements.txt
+```
 
 
 ## Config file
@@ -19,6 +22,7 @@ folder of the program. The config file is organized in several sections. The use
 check and adjust the following entries:
  - Default temperatures for monitoring in the different program modes
  - Temperature sensor channels for magnet or FSE sensor if available
+ - Adjust the still and MXC sensor channels if necessary
  - File path of the Bluefors log files
  - The list of avaliable program modes
  - The hostname of the Bluefors temperature controller
@@ -30,19 +34,21 @@ Infos about how to find the channel id and the access token can be found here:
 
 ## Usage
 Open a terminal, change to the directory of the program and run:
+```
 python cryostat_monitoring.py
+```
 
 It will start a simple user interface that asks you to choose which
 program mode you want to start. The modes currently available are:
-	Full Cooldown
-        Cooldown to 4K
-        Warmup
-        Condensing
-        FSE Cold Insert
-        FSE Cold Insert 4K
-        FSE Warmup
-        Circulation Mode
-	Reading Snapshot
+ - Full Cooldown
+ - Cooldown to 4K
+ - Warmup
+ - Condensing
+ - FSE Cold Insert
+ - FSE Cold Insert 4K
+ - FSE Warmup
+ - Circulation Mode
+ - Reading Snapshot
 
 These modes (except for Reading Snapshot) monitor the temperatures until they reach the
 specified threshold and then send a message. For example, Full Cooldown monitors the
@@ -55,7 +61,9 @@ the terminal ui and their specific order can be changed in the config file.
 ## Setup a batch file
 To make it easier to run the program, you can create a simple batch file.
 If you use an anaconda environment, create a .bat file that contains:
+```
 cd <Path to the program>
 call C:\Users\<Username>\Anaconda3\Scripts\activate.bat base
 call cryostat_monitoring.py
+```
 

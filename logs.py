@@ -2,7 +2,7 @@
 """
 Created on Tue Jan 17 11:37:40 2023
 
-@author: Fabian Oppliger, fabian.oppliger@epfl.ch
+@author: Fabian Oppliger, fabianoppliger@bluewin.ch
 
 This file contains some basic functions to configure and perform event logging.
 The setup function is called before every event logging to make sure, the log
@@ -26,15 +26,19 @@ def setup_logging():
                         handlers=[logging.FileHandler(logfile),
                             logging.StreamHandler(sys.stdout)])
 
-# Writes info message in logfile. calls setup function every time in order to
-# make sure the message is written in the correct file when the date changed.
 def info(msg):
+    """
+    Writes info message in logfile. calls setup function every time in order to
+    make sure the message is written in the correct file when the date changed.
+    """
     setup_logging()
     logging.info(msg)
 
-# Writes warning message in logfile. calls setup function every time in order to
-# make sure the message is written in the correct file when the date changed.    
 def warning(msg):
+    """
+    Writes warning message in logfile. calls setup function every time in order to
+    make sure the message is written in the correct file when the date changed.
+    """
     setup_logging()
     logging.warning(msg)
 
@@ -71,26 +75,32 @@ class ReadLogfiles:
             header = date_time + pressures + temperatures + heaters + flow
             self.write_in_file(header)
 
-    # read and return the last line of a file
     def read_last_line(self,file):
+        """
+        read and return the last line of a file
+        """
         with open(file) as f:
             for line in f:
                 pass
             last_line = line.rstrip('\n')
         return last_line
 
-    # read pressure values from pressure logfile
-    # looks for presence of 'CHx' in line string and then read the value next to it
     def read_pressures(self):
+        """
+        read pressure values from pressure logfile
+        looks for presence of 'CHx' in line string and then read the value next to it
+        """
         line_string = self.read_last_line(self.pressures_file)
         line_list = line_string.split(',')
         for i in range(6):
             index = line_list.index(f'CH{i+1}')
             self.pressures[i] =line_list[index+3]
     
-    # read temperature values from temperature logfiles
-    # loop through log files and get last temperature readings
     def read_temperatures(self):
+        """
+        read temperature values from temperature logfiles
+        loop through log files and get last temperature readings
+        """
         for i,file in enumerate(self.temperatures_files):
             # keep entry empty if the last reading was more than 5 minutes ago
             # or if the file is not found (i.e. it was not generated yet)
@@ -105,8 +115,10 @@ class ReadLogfiles:
             except:
                 self.temperatures[i] = ''
     
-    # read flow values from heater logfile
     def read_heaters(self):
+        """
+        read flow values from heater logfile
+        """
         try:
             line_string = self.read_last_line(self.channels_file)
             line_list = line_string.split(',')
@@ -120,22 +132,28 @@ class ReadLogfiles:
         except:
             self.heaters[0] = ''
     
-    # read flow values from flowmeter logfile
     def read_flow(self):
+        """
+        read flow values from flowmeter logfile
+        """
         line_string = self.read_last_line(self.flow_file)
         line_list = line_string.split(',')
         self.flow[0] = line_list[-1]
         
     def write_in_file(self,line):
-        # open the file in the write mode
+        """
+        open the file in the write mode
+        """
         with open(self.outfile, 'a', newline='') as f:
             # create the csv writer
             writer = csv.writer(f)
             # write a row to the csv file
             writer.writerow(line)
     
-    # write readings into a new logfile
     def write_values(self, status):
+        """
+        write readings into a new logfile
+        """
         self.__init__(self.temp_channels)
         date_time = [datetime.today().strftime('%d-%m-%y'),datetime.today().strftime('%H:%M:%S')]
         self.read_pressures()

@@ -2,13 +2,16 @@
 """
 Created on Sat Dec 31 01:38:18 2022
 
-@author: Fabian Oppliger, fabian.oppliger@epfl.ch
+@author: Fabian Oppliger, fabianoppliger@bluewin.ch
 version: 1.0
 
-Main program that contains a simple user interface that asks which monitoring
-process should be run. It then monitors the specific temperatures sends messages
-to a Discord channel.
-The default temperature thresholds can be changed in the config.ini file.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Main program that contains a simple user interface that asks which monitoring process
+should be run. It then monitors the specific temperatures sends messages to a Discord channel.
+The default temperature thresholds can be changed in the config.ini file. The user can also add
+a comment that is included in the messages sent to the Discord channel.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 """
 
 
@@ -24,7 +27,7 @@ import logs
 class UI():
     def __init__(self):
         # Read config file to define default threshold parameters and channel nr
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(inline_comment_prefixes="#")
         config.read('config.ini')
         config_defaults = config['DEFAULTS']
         self.PT_start = float(config_defaults['PT_start'])
@@ -61,22 +64,32 @@ class UI():
         # setup object for reading and writing pressure and temperature values
         self.log = logs.ReadLogfiles(self.temp_channels)
         
-    # Function definitions for different cooldown and warmup scenarios
+    """
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Backend functions for different cooldown and warmup scenarios
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    """
 
     def convert_sec_to_h_min(self,time_sec):
-        # converts time in seconds to hours and minutes for better readability of the messages.
+        """
+        converts time in seconds to hours and minutes for better readability of the messages.
+        """
         hours = time_sec//3600
         minutes = (time_sec-hours*3600)//60
         return hours, minutes
     
     def monitor_temp(self,temp_channel, threshold, cooling=True, time_threshold=0):
-        # Subscribes to temp sensors and checks them until the temp of temp_channel
-        # is below (or above for cooling=False) the threshold.
+        """
+        Subscribes to temp sensors and checks them until the temp of temp_channel
+        is below (or above for cooling=False) the threshold.
+        """
         self.bftc.monitor_temp(temp_channel,threshold,cooling,time_threshold)
 
     def _50K_temp(self,time_start, threshold, cooling=True):
-        # Monitors 50K temperature and returns a message with the time it took
-        # to reach the threshold.
+        """
+        Monitors 50K temperature and returns a message with the time it took
+        to reach the threshold.
+        """
         self.monitor_temp(self.temp_channels['50K'],threshold, cooling)
         time_passed = time.time() - time_start
         hours, minutes = self.convert_sec_to_h_min(time_passed)
@@ -90,8 +103,10 @@ class UI():
         return time_passed
         
     def still_temp(self,time_start, threshold=5, cooling=True):
-        # Monitors still temperature and returns a message with the time it took
-        # to reach the threshold.
+        """
+        Monitors still temperature and returns a message with the time it took
+        to reach the threshold.
+        """
         self.monitor_temp(self.temp_channels['Still'],threshold, cooling)
         time_passed = time.time() - time_start
         hours, minutes = self.convert_sec_to_h_min(time_passed)
@@ -105,8 +120,10 @@ class UI():
         return time_passed
     
     def mxc_temp(self,time_start, threshold, cooling=True):
-        # Monitors mxc temperature and returns a message with the time it took
-        # to reach the threshold.
+        """
+        Monitors mxc temperature and returns a message with the time it took
+        to reach the threshold.
+        """
         self.monitor_temp(self.temp_channels['MXC'],threshold,cooling)
         time_passed = time.time() - time_start
         hours, minutes = self.convert_sec_to_h_min(time_passed)
@@ -120,7 +137,9 @@ class UI():
         return time_passed
     
     def circulation_mode(self,threshold):
-        # Monitors mxc temperature and returns a warning when it goes above threshold.
+        """
+        Monitors mxc temperature and returns a warning when it goes above threshold.
+        """
         print('Entered circulation mode')
         if self.snapshot_time_hrs:
             print(f'A snapshot of the readings will be taken every {self.snapshot_time_hrs} hours')
@@ -145,8 +164,10 @@ class UI():
         return 1
     
     def full_cooldown(self,still_val,baseT_val,circ_val,msg):
-        # Starts full cooldown and reports when still is cold enough for ciculation
-        # and when reaching base temperature and then enters circulation mode.
+        """
+        Starts full cooldown and reports when still is cold enough for ciculation
+        and when reaching base temperature and then enters circulation mode.
+        """
         self.log.write_values('Before Cooldown')
         self.discord_server.send_message(msg)
         pt_start_time = self._50K_temp(self.start,self.PT_start)
@@ -167,7 +188,9 @@ class UI():
         self.circulation_mode(circ_val)
 
     def cooldown_4K(self,still_val,msg):
-        # Starts cooldown to 4K and reports when still is cold enough.
+        """
+        Starts cooldown to 4K and reports when still is cold enough.
+        """
         self.log.write_values('Before Cooldown')
         self.discord_server.send_message(msg)
         pt_start_time = self._50K_temp(self.start,self.PT_start)
@@ -177,8 +200,10 @@ class UI():
         self.discord_server.send_message(msg) 
     
     def condense(self,baseT_val,circ_val,msg):
-        # starts condensing and reports when reaching base temperature
-        # and then enters circulation mode
+        """
+        starts condensing and reports when reaching base temperature
+        and then enters circulation mode
+        """
         self.discord_server.send_message(msg)
         if self.mxc_temp(self.start,baseT_val):
             time.sleep(3600*2)
@@ -186,8 +211,10 @@ class UI():
             self.circulation_mode(circ_val)
     
     def cold_insert(self,still_val,baseT_val,circ_val,msg):
-        # Starts cold insert and reports when still is cold enough for ciculation
-        # and when reaching base temperature and then enters circulation mode.
+        """
+        Starts cold insert and reports when still is cold enough for ciculation
+        and when reaching base temperature and then enters circulation mode.
+        """
         self.log.write_values('Save Circulation')
         self.discord_server.send_message(msg)
         time.sleep(3600*3)
@@ -198,27 +225,35 @@ class UI():
             self.circulation_mode(circ_val)
     
     def cold_insert_4K(self,still_val,msg):
-        # Starts cold insert and reports when still is cold enough for ciculation
-        # and when reaching base temperature and then enters circulation mode.
+        """
+        Starts cold insert and reports when still is cold enough for ciculation
+        and when reaching base temperature and then enters circulation mode.
+        """
         self.log.write_values('Save Circulation')
         self.discord_server.send_message(msg)
         time.sleep(3600*3)
         self.still_temp(self.start,still_val)
     
     def warmup(self,still_val,msg):
-        # Starts warm-up and reports when still is warm enough.
+        """
+        Starts warm-up and reports when still is warm enough.
+        """
         self.log.write_values('Before Warmup')
         self.discord_server.send_message(msg)
         self.still_temp(self.start, still_val, cooling=False)
         self.log.write_values('Room Temperature')
     
     def fse_warmup(self,msg):
-        # Starts FSE warm-up.
+        """
+        Starts FSE warm-up.
+        """
         self.log.write_values('Before FSE Warmup')
         self.discord_server.send_message(msg)
 
     def check_disconnect(self,time=None):
-        # Returns a message, that the API was disconnected unexpectedly
+        """
+        Returns a message, that the API was disconnected unexpectedly
+        """
         if time:
             msg_time = 'after %.2f h '
         else:
@@ -228,8 +263,16 @@ class UI():
 
     #%% User interface setup
 
+    """
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    UI functions for different cooldown and warmup scenarios
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    """
+
     def get_cmd_value(self,msg):
-        # Converts the ui input to a float if possible, otherwise return None.
+        """
+        Converts the ui input to a float if possible, otherwise return None.
+        """
         cmd = input(msg)
         if cmd:
             cmd_val = float(cmd)
@@ -367,17 +410,39 @@ class UI():
         if comment:
             msg+=' - Comment: ' + comment
         self.fse_warmup(msg)
-        
+
+    def ui_description(self):
+        print(dedent('''\
+                     User selected -> Description of the program modes'''))
+        cmd=input('Choose the program mode you are interested in from the list above: ')
+        program_nr = int(cmd)-1
+        program_name = self.user_available_programs[program_nr]
+        descriptions = {
+            'Full Cooldown': 'Cooldown of the cryostat with pumping and mixture condensation. The user is notified when the pulse tube is started (based on 50K temperature), when still is cold enough for circulation and when reaching base temperature. After reaching base temperature, the program enters circulation mode.',
+            'Cooldown to 4K': 'Cooldown of the cryostat with pumping until reaching 4 K. The user is notified when the pulse tube is started (based on 50K temperature), when the still is cold enough for circulation. The program does not enter circulation mode.',
+            'Condensing': 'Condensing of the mixture starting from a cold still. The user is notified when reaching base temperature and then enters circulation mode.',
+            'FSE Cold Insert': 'Automatic cold insert of the FSE including condensation starting from a safe circulation mode. The user is notified when the still is cold enough for circulation and when reaching base temperature. After reaching base temperature, the program enters circulation mode.',
+            'FSE Cold Insert 4K': 'Automatic cold insert of the FSE stopping at 4 K starting from a safe circulation mode. The user is notified when the still is cold enough for circulation. The program does not enter circulation mode.',
+            'Warmup': 'Warmup of the cryostat with pumping. The user is notified when the still is warm enough.',
+            'FSE Warmup': 'Warmup of the FSE with pumping. The user is notfied when starting the warmup, but not when it finishes.',
+            'Circulation Mode': 'Monitoring of the MXC temperature during circulation. A warning message is sent if it goes above a certain threshold, which can be used to detect unwanted warmups during circulation. Optionally, a snapshot of the readings can be taken at regular time intervals (e.g., every 24h) to monitor the long-term stability during circulation.',
+            'Reading Snapshot': 'Takes a snapshot of the readings and saves them in a log file. The user can add a change the status associated with the snapshot that is included in the log file.',
+            }
+        print(program_name + ':')
+        print(descriptions[program_name])
+        print('')
+
     
     #%% User interface
     
     def program_interface(self):
-        # Runs the program interface that asks the user to select the program mode
-        # and the desired temperature thresholds. The timer is started once the
-        # program has been selected.
+        """
+        Runs the program interface that asks the user to select the program mode
+        and the desired temperature thresholds. The timer is started once the
+        program has been selected.
+        """
         
         existing_programs = {
-            'Circulation Mode': self.ui_circulation_mode,
             'Full Cooldown': self.ui_full_cooldown,
             'Cooldown to 4K': self.ui_cooldown_4K,
             'Condensing': self.ui_condense,
@@ -385,25 +450,31 @@ class UI():
             'FSE Cold Insert 4K': self.ui_cold_insert_4K,
             'Warmup': self.ui_warmup,
             'FSE Warmup': self.ui_fse_warmup,
+            'Circulation Mode': self.ui_circulation_mode,
             'Reading Snapshot': self.ui_snapshot,
             }
         
         print('')
-        print('Available commands are:')
-        [print('    '+str(i+1)+' -> '+program) for i,program in enumerate(self.user_available_programs)];
+        print('Available program modes are:')
+        print('    0 -> Description of the program modes')
+        [print('    '+str(i+1)+' -> '+program_name) for i,program_name in enumerate(self.user_available_programs)];
         print('    Nothing -> Exit')
-        cmd=input('Please select which program to start: ')
+        cmd=input('Please select which program mode to start: ')
         print('')
         self.start = time.time()
         
-        if not cmd:
+        if cmd == '':
             print('User quited the program')
+            return
+        if cmd == 0:
+            print('User selected -> Description of the program modes')
+            
             return
         try:
             program_nr = int(cmd)-1
             if program_nr in range(len(self.user_available_programs)):
-                program = self.user_available_programs[program_nr]
-                existing_programs[program]()
+                program_name = self.user_available_programs[program_nr]
+                existing_programs[program_name]()
             else:
                 print(f'User input {cmd} is invalid.')
                 print('')

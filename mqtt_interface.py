@@ -2,7 +2,7 @@
 """
 Created on Sat Jan 14 20:39:56 2023
 
-@author: Fabian Oppliger, fabian.oppliger@epfl.ch
+@author: Fabian Oppliger, fabianoppliger@bluewin.ch
 
 
 The Client_bftc class sets up an MQTT connection to a Bluefors temperature controller
@@ -19,7 +19,7 @@ import paho.mqtt.client as mqtt
 class Client_bftc(mqtt.Client):
     def __init__(self):
         # Read config file to setup connection to API
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(inline_comment_prefixes="#")
         config.read('config.ini')
         config_mqtt = config['MQTT']
         
@@ -33,10 +33,12 @@ class Client_bftc(mqtt.Client):
         # Connect to the broker
         self.connect(self.hostname, self.port, 60)
         
-    # This function is automatically run whenever a message is sent on the 
-    # subscribed topic. It reads the temperature and closes the connection
-    # when the given temperature threshold is reached on the desired channel.
     def on_msg(self,client, userdata, msg):
+        """
+        This function is automatically run whenever a message is sent on the 
+        subscribed topic. It reads the temperature and closes the connection
+        when the given temperature threshold is reached on the desired channel.
+        """
         data = json.loads(msg.payload)
         if (data['channel_nr'] == self.temp_channel) & bool(data['temperature']):
             # ^ is the xor operator
@@ -50,11 +52,13 @@ class Client_bftc(mqtt.Client):
                 self.time_threshold_reached = True
                 self.disconnect()
     
-    # First reconnects to the client, passes function arguments as object attributes
-    # (otherwise, we cannot send them the the on_msg function) and then subscribes
-    # to the temperature sensors and loops until the client is disconnected 
-    # (which happens when the temperature theshold is reached).
     def monitor_temp(self,channel,threshold,cooling,time_threshold=0):
+        """
+        First reconnects to the client, passes function arguments as object attributes
+        (otherwise, we cannot send them the the on_msg function) and then subscribes
+        to the temperature sensors and loops until the client is disconnected 
+        (which happens when the temperature theshold is reached).
+        """
         self.reconnect()
         self.on_message = self.on_msg
         self.temp_channel = channel
