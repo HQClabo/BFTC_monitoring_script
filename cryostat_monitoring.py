@@ -415,8 +415,6 @@ class UI():
         print(dedent('''\
                      User selected -> Description of the program modes'''))
         cmd=input('Choose the program mode you are interested in from the list above: ')
-        program_nr = int(cmd)-1
-        program_name = self.user_available_programs[program_nr]
         descriptions = {
             'Full Cooldown': 'Cooldown of the cryostat with pumping and mixture condensation. The user is notified when the pulse tube is started (based on 50K temperature), when still is cold enough for circulation and when reaching base temperature. After reaching base temperature, the program enters circulation mode.',
             'Cooldown to 4K': 'Cooldown of the cryostat with pumping until reaching 4 K. The user is notified when the pulse tube is started (based on 50K temperature), when the still is cold enough for circulation. The program does not enter circulation mode.',
@@ -428,9 +426,16 @@ class UI():
             'Circulation Mode': 'Monitoring of the MXC temperature during circulation. A warning message is sent if it goes above a certain threshold, which can be used to detect unwanted warmups during circulation. Optionally, a snapshot of the readings can be taken at regular time intervals (e.g., every 24h) to monitor the long-term stability during circulation.',
             'Reading Snapshot': 'Takes a snapshot of the readings and saves them in a log file. The user can add a change the status associated with the snapshot that is included in the log file.',
             }
-        print(program_name + ':')
-        print(descriptions[program_name])
-        print('')
+        
+        program_nr = int(cmd)-1
+        if program_nr in range(len(self.user_available_programs)):
+            program_name = self.user_available_programs[program_nr]
+            print('')
+            print(program_name + ':')
+            print(descriptions[program_name])
+        else:
+            print('')
+            print(f'User input {cmd} is invalid.')
 
     
     #%% User interface
