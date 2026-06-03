@@ -466,13 +466,11 @@ class UI():
         if cmd == '':
             print('User quited the program')
             return
-        if cmd == 0:
-            print('User selected -> Description of the program modes')
-            
-            return
         try:
             program_nr = int(cmd)-1
-            if program_nr in range(len(self.user_available_programs)):
+            if cmd == '0':
+                self.ui_description()
+            elif program_nr in range(len(self.user_available_programs)):
                 program_name = self.user_available_programs[program_nr]
                 existing_programs[program_name]()
             else:
