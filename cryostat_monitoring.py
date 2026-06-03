@@ -427,15 +427,22 @@ class UI():
             'Reading Snapshot': 'Takes a snapshot of the readings and saves them in a log file. The user can add a change the status associated with the snapshot that is included in the log file.',
             }
         
-        program_nr = int(cmd)-1
-        if program_nr in range(len(self.user_available_programs)):
-            program_name = self.user_available_programs[program_nr]
-            print('')
-            print(program_name + ':')
-            print(descriptions[program_name])
-        else:
-            print('')
+        try:
+            program_nr = int(cmd)-1
+            if program_nr in range(len(self.user_available_programs)):
+                program_name = self.user_available_programs[program_nr]
+                print('')
+                print(program_name + ':')
+                print(descriptions[program_name])
+            else:
+                print('')
+                print(f'User input {cmd} is invalid.')
+        except KeyboardInterrupt:
+            print('User interrupted the program.')
+        except Exception:
+            traceback.print_exc()
             print(f'User input {cmd} is invalid.')
+            print('')
 
     
     #%% User interface
