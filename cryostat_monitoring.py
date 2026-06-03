@@ -427,6 +427,9 @@ class UI():
             'Reading Snapshot': 'Takes a snapshot of the readings and saves them in a log file. The user can add a change the status associated with the snapshot that is included in the log file.',
             }
         
+        if cmd == '':
+            print('User quited the program')
+            return
         try:
             program_nr = int(cmd)-1
             if program_nr in range(len(self.user_available_programs)):
