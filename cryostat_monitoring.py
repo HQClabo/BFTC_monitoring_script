@@ -441,11 +441,11 @@ class UI():
                 print('')
                 print(f'User input {cmd} is invalid.')
         except KeyboardInterrupt:
+            print('')
             print('User interrupted the program.')
         except Exception:
             traceback.print_exc()
             print(f'User input {cmd} is invalid.')
-            print('')
 
     
     #%% User interface
@@ -492,11 +492,11 @@ class UI():
                 print(f'User input {cmd} is invalid.')
                 print('')
         except KeyboardInterrupt:
+            print('')
             print('User interrupted the program.')
         except Exception:
             traceback.print_exc()
             print(f'User input {cmd} is invalid.')
-            print('')
             
         self.program_interface()
 
