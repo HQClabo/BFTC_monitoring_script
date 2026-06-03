@@ -32,7 +32,9 @@ class Discord_access():
         """
         logs.info(msg)
         payload = {'content': msg}
-        requests.post(self.discord_channel, data=payload, headers=self.header)
+        response = requests.post(self.discord_channel, data=payload, headers=self.header)
+        if response.status_code != 200:
+            logs.warning(f"Failed to send message to Discord channel. Status code: {response.status_code}, Response: {response.text}")
     
     def send_warning(self,msg):
         """
@@ -40,6 +42,8 @@ class Discord_access():
         """
         logs.warning(msg)
         payload = {'content': 'Warning: '+msg}
-        requests.post(self.discord_channel, data=payload, headers=self.header)
+        response = requests.post(self.discord_channel, data=payload, headers=self.header)
+        if response.status_code != 200:
+            logs.warning(f"Failed to send message to Discord channel. Status code: {response.status_code}, Response: {response.text}")
         
 
