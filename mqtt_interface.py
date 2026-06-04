@@ -12,6 +12,7 @@ is reached. The IP address of the API is defined in the config.ini file.
 """
 
 import time
+import datetime as dt
 import json
 import configparser
 import paho.mqtt.client as mqtt
@@ -29,11 +30,12 @@ class Client_bftc(mqtt.Client):
         self.port = int(config_mqtt['port'])
         self.temp_topic = config_mqtt['topic']
         self.threshold_reached = False
+        self.last_snapshot_date = None
 
         # Connect to the broker
         self.connect(self.hostname, self.port, 60)
         
-    def on_msg(self,client, userdata, msg):
+    def on_msg(self, client, userdata, msg):
         """
         This function is automatically run whenever a message is sent on the 
         subscribed topic. It reads the temperature and closes the connection
@@ -46,13 +48,20 @@ class Client_bftc(mqtt.Client):
                 # Set boolean to True to recognize unwanted disconnections
                 self.threshold_reached = True
                 self.disconnect()
-        # Check if the time threshold is reached. Does nothing if time_threshold is 0.
-        if self.time_threshold:
-            if abs(time.time() - self.monitor_start_time) > self.time_threshold:
-                self.time_threshold_reached = True
-                self.disconnect()
+        
+        now = dt.datetime.now()
+        time_range = dt.timedelta(minutes=1)
+
+        if (
+            self.snapshot_time
+            and self.snapshot_time <= now.time() <= self.snapshot_time + time_range
+            and self.last_snapshot_date != now.date()
+            ):
+            self.take_snapshot = True
+            self.last_snapshot_date = now.date()
+            self.disconnect()
     
-    def monitor_temp(self,channel,threshold,cooling,time_threshold=0):
+    def monitor_temp(self,channel,threshold,cooling,snapshot_time=None):
         """
         First reconnects to the client, passes function arguments as object attributes
         (otherwise, we cannot send them the the on_msg function) and then subscribes
@@ -65,9 +74,7 @@ class Client_bftc(mqtt.Client):
         self.temp_threshold = threshold
         self.cooling_bool = cooling
         self.threshold_reached = False
-        self.monitor_start_time = time.time()
-        self.time_threshold = time_threshold
-        self.time_threshold_reached = False
+        self.snapshot_time = snapshot_time
         self.subscribe(self.temp_topic,0)
         self.loop_forever()
     
