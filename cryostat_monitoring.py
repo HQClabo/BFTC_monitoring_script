@@ -53,7 +53,8 @@ class UI():
         if not config_defaults['snapshot_time']:
             self.snapshot_time = None
         else:
-            self.snapshot_time = dt.time.fromisoformat(config_defaults['snapshot_time'])
+            daytime = dt.time.fromisoformat(config_defaults['snapshot_time'])
+            self.snapshot_time = dt.datetime.combine(dt.date.today(), daytime)
         
         config_program_modes = config['PROGRAM_MODES']['available_modes'].split('\n')
         self.user_available_programs = [mode for mode in config_program_modes if mode != '']
@@ -79,12 +80,12 @@ class UI():
         minutes = (time_sec-hours*3600)//60
         return hours, minutes
     
-    def monitor_temp(self,temp_channel, threshold, cooling=True, time_threshold=0):
+    def monitor_temp(self,temp_channel, threshold, cooling=True, snapshot_time=None):
         """
         Subscribes to temp sensors and checks them until the temp of temp_channel
         is below (or above for cooling=False) the threshold.
         """
-        self.bftc.monitor_temp(temp_channel,threshold,cooling,time_threshold)
+        self.bftc.monitor_temp(temp_channel,threshold,cooling,snapshot_time)
 
     def _50K_temp(self,time_start, threshold, cooling=True):
         """
@@ -143,7 +144,7 @@ class UI():
         """
         print('Entered circulation mode')
         if self.snapshot_time:
-            print(f'A snapshot of the readings will be taken every day at {self.snapshot_time.strftime("%H:%M")} hours')
+            print(f'A snapshot of the readings will be taken every day at {self.snapshot_time.strftime("%H:%M")}.')
         print('Press Ctrl+C to exit the program')
         print('')
         self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, snapshot_time=self.snapshot_time)

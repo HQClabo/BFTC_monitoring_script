@@ -54,7 +54,7 @@ class Client_bftc(mqtt.Client):
 
         if (
             self.snapshot_time
-            and self.snapshot_time <= now.time() <= self.snapshot_time + time_range
+            and self.snapshot_time <= now <= self.snapshot_time + time_range
             and self.last_snapshot_date != now.date()
             ):
             self.take_snapshot = True
