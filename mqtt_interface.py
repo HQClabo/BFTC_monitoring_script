@@ -50,7 +50,7 @@ class Client_bftc(mqtt.Client):
                 self.disconnect()
         
         now = dt.datetime.now()
-        time_range = dt.timedelta(minutes=1)
+        time_range = dt.timedelta(minutes=10)
 
         if (
             self.snapshot_time
