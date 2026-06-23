@@ -53,7 +53,7 @@ class Client_bftc(mqtt.Client):
         time_range = dt.timedelta(minutes=10)
 
         self.take_snapshot = False
-        if not self.last_snapshot:
+        if not self.snapshot_time:
             return
         if self.snapshot_time <= now <= self.snapshot_time + time_range:
             self.take_snapshot = True
