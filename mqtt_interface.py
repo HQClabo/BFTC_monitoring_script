@@ -55,6 +55,9 @@ class Client_bftc(mqtt.Client):
         self.take_snapshot = False
         if not self.snapshot_time:
             return
+        if self.snapshot_time + time_range < now:
+            # if the snapshot time is in the past, we need to update it to the next day
+            self.snapshot_time = self.snapshot_time + dt.timedelta(days=1)
         if self.snapshot_time <= now <= self.snapshot_time + time_range:
             self.take_snapshot = True
             self.snapshot_time = self.snapshot_time + dt.timedelta(days=1) # make sure that the next snapshot will be taken the next day at the same time
