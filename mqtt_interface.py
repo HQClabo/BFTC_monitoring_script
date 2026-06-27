@@ -60,7 +60,6 @@ class Client_bftc(mqtt.Client):
             self.snapshot_time = self.snapshot_time + dt.timedelta(days=1)
         if self.snapshot_time <= now <= self.snapshot_time + time_range:
             self.take_snapshot = True
-            self.snapshot_time = self.snapshot_time + dt.timedelta(days=1) # make sure that the next snapshot will be taken the next day at the same time
             self.disconnect()
     
     def monitor_temp(self,channel,threshold,cooling,snapshot_time=None):

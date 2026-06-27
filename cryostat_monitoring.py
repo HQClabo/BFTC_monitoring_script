@@ -156,6 +156,8 @@ class UI():
                 msg = dt.datetime.today().strftime('%Y/%m/%d %H:%M:%S')
                 msg += ' - Snapshot of the readings was taken'
                 print(msg)
+                # make sure that the next snapshot will be taken the next day at the same time
+                self.snapshot_time = self.snapshot_time + dt.timedelta(days=1)
             else:
                 self.check_disconnect()
             self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, snapshot_time=self.snapshot_time)
