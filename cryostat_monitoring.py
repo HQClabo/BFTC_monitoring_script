@@ -49,12 +49,12 @@ class UI():
         if config_defaults['channel_nr_magnet']: self.temp_channels['Magnet']=int(config_defaults['channel_nr_magnet'])
         if config_defaults['channel_nr_fse']: self.temp_channels['FSE']=int(config_defaults['channel_nr_fse'])
         
-        # config_defaults['snapshot_time'] is the day time in hh:mm format, at which a snapshot of the readings is taken during circulation mode. If it is empty or 'None', no snapshots will be taken.
+        # config_defaults['snapshot_time'] is the day time in hh:mm format, at which a snapshot of the readings is taken during circulation mode.
+        # If it is empty or 'None', no snapshots will be taken.
         if not config_defaults['snapshot_time']:
-            self.snapshot_time = None
+            self.snapshot_daytime = None
         else:
-            daytime = dt.time.fromisoformat(config_defaults['snapshot_time'])
-            self.snapshot_time = dt.datetime.combine(dt.date.today(), daytime)
+            self.snapshot_daytime = dt.time.fromisoformat(config_defaults['snapshot_time'])
         
         config_program_modes = config['PROGRAM_MODES']['available_modes'].split('\n')
         self.user_available_programs = [mode for mode in config_program_modes if mode != '']
@@ -143,11 +143,22 @@ class UI():
         Monitors mxc temperature and returns a warning when it goes above threshold.
         """
         print('Entered circulation mode')
-        if self.snapshot_time:
-            print(f'A snapshot of the readings will be taken every day at {self.snapshot_time.strftime("%H:%M")}.')
+        if self.snapshot_daytime:
+            print(f'A snapshot of the readings will be taken every day at {self.snapshot_daytime.strftime("%H:%M")}.')
         print('Press Ctrl+C to exit the program')
         print('')
-        self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, snapshot_time=self.snapshot_time)
+
+        # figure out whent to take the next snapshot based on the current time and the desired snapshot time
+        now = dt.datetime.now()
+        if self.snapshot_daytime is None:
+            snapshot_time = None
+        else:
+            snapshot_time = dt.datetime.combine(dt.date.today(), self.snapshot_daytime)
+        if snapshot_time < now:
+            # if the snapshot time is in the past, we need to update it to the next day
+            snapshot_time = snapshot_time + dt.timedelta(days=1)
+        self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, snapshot_time=snapshot_time)
+
         # check if threshold was reached, otherwise repeat monitoring
         # if the time threshold was reached, take a snapshot of the readings and continue monitoring
         while not self.bftc.threshold_reached:
@@ -157,10 +168,10 @@ class UI():
                 msg += ' - Snapshot of the readings was taken'
                 print(msg)
                 # make sure that the next snapshot will be taken the next day at the same time
-                self.snapshot_time = self.snapshot_time + dt.timedelta(days=1)
+                snapshot_time = snapshot_time + dt.timedelta(days=1)
             else:
                 self.check_disconnect()
-            self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, snapshot_time=self.snapshot_time)
+            self.monitor_temp(self.temp_channels['MXC'], threshold, cooling=False, snapshot_time=snapshot_time)
         msg = f'MXC surpassed {threshold*1000} mK'
         self.discord_server.send_warning(msg)
         self.log.write_values('Unexpected Warmup')

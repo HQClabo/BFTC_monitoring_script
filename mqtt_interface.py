@@ -50,15 +50,10 @@ class Client_bftc(mqtt.Client):
                 self.disconnect()
         
         now = dt.datetime.now()
-        time_range = dt.timedelta(minutes=10)
+        time_range = dt.timedelta(minutes=2)
 
         self.take_snapshot = False
-        if not self.snapshot_time:
-            return
-        if self.snapshot_time + time_range < now:
-            # if the snapshot time is in the past, we need to update it to the next day
-            self.snapshot_time = self.snapshot_time + dt.timedelta(days=1)
-        if self.snapshot_time <= now <= self.snapshot_time + time_range:
+        if self.snapshot_time and self.snapshot_time <= now <= self.snapshot_time + time_range:
             self.take_snapshot = True
             self.disconnect()
     
